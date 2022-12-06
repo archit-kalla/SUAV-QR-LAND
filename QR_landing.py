@@ -54,15 +54,18 @@ def undistort(img):
     return dst
 
 def is_qr(img):
-    try :
-        detector = cv2.QRCodeDetector()
-        _, bbox, _ = detector.detectAndDecode(img)
-        if bbox is not None:
-            return True, bbox
-        else:
-            return False, None
-    except:
-        return False, None
+    #use pyzbar to find the qr code in the image and bounding box
+        #find the qr code in the image
+    qr = pyzbar.decode(img)
+
+    #if there is a qr code in the image
+    if len(qr) > 0:
+        #get the bounding box of the qr code
+        bbox = qr[0].polygon
+        #return the bounding box of the qr code
+        return True, bbox
+    return False, None
+
 
 #take a point in an image and return the realworld coordinates of that point
 def center_bbox(bbox):
