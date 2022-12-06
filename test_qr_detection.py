@@ -40,6 +40,7 @@ while(1):
         cv2.imshow('img', img)
     except:
         print("No QR code found")
+        cv2.imshow('img', img)
         continue
     if cv2.waitKey(25) & 0xFF == ord('q'):
         break
