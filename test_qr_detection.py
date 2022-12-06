@@ -18,6 +18,8 @@ def read_kd():
         mtx, dist, _, _ = [X[i] for i in ('mtx','dist','rvecs','tvecs')]
     return mtx, dist
 mtx,dist = read_kd()
+frame =0
+counter = 0
 while(1):
     image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
     camera.capture(image, 'bgr')
@@ -28,8 +30,7 @@ while(1):
     D=dist
     newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, D, (w, h), 1, (w, h))
     img = cv2.undistort(gray, K, D, None, newcameramtx)
-    frame =0
-    counter = 0
+
     cv2.undistort(img, mtx, dist, None, mtx)
     try:
         qr = pyzbar.pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
@@ -45,7 +46,6 @@ while(1):
         counter+=1
         frame+=1
         cv2.imshow('img', img)
-
         continue
     if cv2.waitKey(25) & 0xFF == ord('q'):
         break
