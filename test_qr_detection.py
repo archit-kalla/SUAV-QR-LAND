@@ -23,15 +23,15 @@ counter = 0
 while(1):
     image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
     camera.capture(image, 'bgr')
-    new_img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-    gray = cv2.cvtColor(new_img, cv2.COLOR_BGR2GRAY)
-    h, w = gray.shape[:2]
+    img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    h, w = img.shape[:2]
     K=mtx
     D=dist
-    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, D, (w, h), 1, (w, h))
-    img = cv2.undistort(gray, K, D, None, newcameramtx)
+    # newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, D, (w, h), 1, (w, h))
+    # img = cv2.undistort(gray, K, D, None, newcameramtx)
 
-    cv2.undistort(img, mtx, dist, None, mtx)
+    # cv2.undistort(img, mtx, dist, None, mtx)
     try:
         qr = pyzbar.pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
         bbox = qr[0].rect
