@@ -57,7 +57,7 @@ def undistort(img):
 def is_qr(img):
     #use pyzbar to find the qr code in the image and bounding box
     #find the qr code in the image
-    qr = pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
+    qr = pyzbar.pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
 
     #if there is a qr code in the image
     if len(qr) > 0:
