@@ -105,15 +105,15 @@ def get_qr_pos(img,center_bbox):
     dist_y = center_img[1] - center_bbox[1]
 
     #get the angle from the center of the image to the center of the qr code
-    angle_x = math.radians(FOV_X*(dist_x/w))
-    angle_y = math.radians(FOV_Y*(dist_y/h))
+    angle_x = math.radians(FOV_X*(float(dist_x)/float(w)))
+    angle_y = math.radians(FOV_Y*float(dist_y)/float(w)))
 
     #get the distance from the camera to the qr code
     dist = CAMERA_HEIGHT/math.cos(angle_y)
 
     #get the real world coordinates of the center of the qr code
-    x = dist*math.cos(angle_x)
-    y = dist*math.sin(angle_x)
+    x = dist*math.sin(angle_x)
+    y = dist*math.sin(angle_y)
 
     #return the real world coordinates of the center of the qr code
     return (x,y)
@@ -197,7 +197,7 @@ if __name__ == "__main__":
                         is_qr_test, bbox = is_qr(img)
                         if is_qr_test:
                             center = center_bbox(bbox)
-                            x, y = get_qr_pos(center)
+                            x, y = get_qr_pos(img, center)
                             while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or not (rospy.Time.now() - last_req > rospy.Duration(5.0)):
                                 print("waiting for feedback_1")
                                 local_pos_pub.publish(pose)
@@ -210,6 +210,8 @@ if __name__ == "__main__":
                                 print("moving to qr code")
                                 pose.pose.position.x = feedback_pos.pose.position.x + x
                                 pose.pose.position.y = feedback_pos.pose.position.y + y
+                                print("x: ", pose.pose.position.x)
+                                print("y: ", pose.pose.position.y)
                                 last_xy = (feedback_pos.pose.position.x + x,feedback_pos.pose.position.y+y)
                                 local_pos_pub.publish(pose)
                                 rate.sleep()
@@ -221,8 +223,8 @@ if __name__ == "__main__":
                                 print("waiting to update feedback_pos")
                                 local_pos_pub.publish(pose)
                                 rate.sleep()
-                            pose.pose.position.x = random.uniform(-1,1)
-                            pose.pose.position.y = random.uniform(-1,1)
+                            # pose.pose.position.x = random.uniform(-1,1)
+                            # pose.pose.position.y = random.uniform(-1,1)
                             print("x: ", pose.pose.position.x)
                             print("y: ", pose.pose.position.y)
                             last_xy = (pose.pose.position.x, pose.pose.position.y)
@@ -233,6 +235,7 @@ if __name__ == "__main__":
                         print("No image detected")
                         rate.sleep()
                 else:
+                    print("arming")
                     arming_client(arm_cmd)
                     last_req = rospy.Time.now()
                     rate.sleep()
