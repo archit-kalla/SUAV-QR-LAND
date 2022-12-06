@@ -9,6 +9,7 @@ from mavros_msgs.msg import State
 from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeRequest, CommandTOL, CommandTOLRequest
 import cv2
 import pyzbar
+from pyzbar.pyzbar import ZBarSymbol
 import random
 
 current_state = State()
@@ -55,13 +56,14 @@ def undistort(img):
 
 def is_qr(img):
     #use pyzbar to find the qr code in the image and bounding box
-        #find the qr code in the image
-    qr = pyzbar.decode(img)
+    #find the qr code in the image
+    qr = pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
 
     #if there is a qr code in the image
     if len(qr) > 0:
         #get the bounding box of the qr code
-        bbox = qr[0].polygon
+        bbox = qr[0].rect
+
         #return the bounding box of the qr code
         return True, bbox
     return False, None
@@ -70,7 +72,7 @@ def is_qr(img):
 #take a point in an image and return the realworld coordinates of that point
 def center_bbox(bbox):
     #get the center of the qr code
-    center = (int(bbox[0][0] + bbox[2][0])/2, int(bbox[0][1] + bbox[2][1])/2)
+    center = (bbox.left + int(bbox.width/2), bbox.top + int(bbox.height/2))
 
     #return the center of the qr code
     return center
