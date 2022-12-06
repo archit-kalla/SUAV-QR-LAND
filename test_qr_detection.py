@@ -20,6 +20,15 @@ def read_kd():
 mtx,dist = read_kd()
 frame =0
 counter = 0
+
+#take a point in an image and return the realworld coordinates of that point
+def center_bbox(bbox):
+    #get the center of the qr code
+    center = (bbox.left + int(bbox.width/2), bbox.top + int(bbox.height/2))
+
+    #return the center of the qr code
+    return center
+
 while(1):
     image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
     camera.capture(image, 'bgr')
@@ -35,10 +44,13 @@ while(1):
     try:
         qr = pyzbar.pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
         bbox = qr[0].rect
-        center = (bbox.left + int(bbox.width/2), bbox.top + int(bbox.height/2))
+        center = center_bbox(bbox)
 
         #display the bounding box
         cv2.rectangle(img, (bbox.left, bbox.top), (bbox.left + bbox.width, bbox.top + bbox.height), (0, 0, 255), 2)
+
+        #display the center of the bounding box
+        cv2.circle(img, center, 5, (0, 255, 0), -1)
         frame += 1
         cv2.imshow('img', img)
     except:

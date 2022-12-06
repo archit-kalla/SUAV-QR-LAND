@@ -192,7 +192,7 @@ if __name__ == "__main__":
                     image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
                     camera.capture(image, 'bgr')
                     img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-                    img = undistort(img)
+                    # img = undistort(img)
                     if img:
                         is_qr_test, bbox = is_qr(img)
                         if is_qr_test:
@@ -217,12 +217,12 @@ if __name__ == "__main__":
                             print("No QR code detected")
                             print("moving to random position")
                             #wait until feedback_pos is updated
-                            while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or (rospy.Time.now() - last_req > rospy.Duration(5.0)):
+                            while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or (rospy.Time.now() - last_req > rospy.Duration(10.0)):
                                 print("waiting to update feedback_pos")
                                 local_pos_pub.publish(pose)
                                 rate.sleep()
-                            pose.pose.position.x = random.uniform(-2,2)
-                            pose.pose.position.y = random.uniform(-2,2)
+                            pose.pose.position.x = random.uniform(-1,1)
+                            pose.pose.position.y = random.uniform(-1,1)
                             print("x: ", pose.pose.position.x)
                             print("y: ", pose.pose.position.y)
                             last_xy = (pose.pose.position.x, pose.pose.position.y)
