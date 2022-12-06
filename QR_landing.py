@@ -11,6 +11,8 @@ import cv2
 import pyzbar
 from pyzbar.pyzbar import ZBarSymbol
 import random
+from picamera import PiCamera
+
 
 current_state = State()
 land_cmd = None
@@ -20,7 +22,11 @@ land_cmd = None
 init_pos = (0,0,0)
 takeoff_height = 1.5
 #initialize camera
-cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture(0)
+camera = PiCamera()
+camera.resolution = (1280, 720)
+camera.framerate = 15
+
 
 mtx, dist = None, None
 #read k and d from camera.npz
@@ -171,6 +177,8 @@ if __name__ == "__main__":
     last_req = rospy.Time.now()
     last_xy = (init_pos[0], init_pos[1])
 
+
+
     while not rospy.is_shutdown():
         if current_state.mode != "OFFBOARD" and (rospy.Time.now() - last_req > rospy.Duration(5.0)):
             set_mode_client(offb_set_mode)
@@ -181,9 +189,11 @@ if __name__ == "__main__":
                 last_req = rospy.Time.now()
             else:
                 if current_state.armed:
-                    ret, img = cap.read()
+                    image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
+                    camera.capture(image, 'bgr')
+                    img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
                     img = undistort(img)
-                    if ret:
+                    if img:
                         is_qr_test, bbox = is_qr(img)
                         if is_qr_test:
                             center = center_bbox(bbox)
@@ -226,4 +236,3 @@ if __name__ == "__main__":
                     arming_client(arm_cmd)
                     last_req = rospy.Time.now()
                     rate.sleep()
-    cap.release()
