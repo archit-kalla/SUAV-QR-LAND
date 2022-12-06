@@ -39,10 +39,12 @@ while(1):
         #display the bounding box
         cv2.rectangle(img, (bbox.left, bbox.top), (bbox.left + bbox.width, bbox.top + bbox.height), (0, 0, 255), 2)
         cv2.imshow('img', img)
+        frame += 1
     except:
         print("No QR code found Frame:"+str(frame) +" Count: "+ str(counter))
         cv2.imshow('img', img)
         counter+=1
+        frame+=1
         continue
     if cv2.waitKey(25) & 0xFF == ord('q'):
         break
