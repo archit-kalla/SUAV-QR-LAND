@@ -4,9 +4,16 @@ import cv2
 import numpy as np
 import time
 import os
+import PiCamera
 
 #set the camera
-cap = cv2.VideoCapture(0)
+camera = PiCamera()
+camera.resolution = (1920, 1080)
+camera.framerate = 30
+camera.start_preview()
+time.sleep(2)
+
+
 
 #set the number of images to take
 num_images = 30
@@ -23,17 +30,13 @@ if not os.path.exists(folder):
 
 #take the images
 for i in range(num_images):
+    camera.start_preview()
+    time.sleep(2)
     #get the image
-    ret, frame = cap.read()
-    #show the image
-    cv2.imshow('frame', frame)
-    cv2.waitKey(1)
-    cv2.destroyAllWindows()
-    #save the image
-    cv2.imwrite(folder + '/calib_' + str(i) + '.png', frame)
-    #wait for the delay
-    time.sleep(delay)
+    img = camera.capture('calib_images/image%02d.jpg' % i)
+
+
 
 #release the camera
-cap.release()
+
 
