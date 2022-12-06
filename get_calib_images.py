@@ -12,7 +12,7 @@ cap = cv2.VideoCapture(0)
 num_images = 30
 
 #set the delay between images
-delay = 1
+delay = 5
 
 #set the folder to save the images
 folder = 'calib_images'
@@ -25,8 +25,12 @@ if not os.path.exists(folder):
 for i in range(num_images):
     #get the image
     ret, frame = cap.read()
+    #show the image
+    cv2.imshow('frame', frame)
+    cv2.waitKey(1)
+    cv2.destroyAllWindows()
     #save the image
-    cv2.imwrite(folder + '/calib' + str(i) + '.png', frame)
+    cv2.imwrite(folder + '/calib_' + str(i) + '.png', frame)
     #wait for the delay
     time.sleep(delay)
 

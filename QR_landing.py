@@ -8,6 +8,8 @@ from mavros_msgs.msg import State
 # added CommandTOL services
 from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeRequest, CommandTOL, CommandTOLRequest
 import cv2
+import pyzbar
+import random
 
 current_state = State()
 land_cmd = None
@@ -22,7 +24,7 @@ cap = cv2.VideoCapture(0)
 mtx, dist = None, None
 #read k and d from camera.npz
 def read_kd():
-    with np.load('camera.npz') as X:
+    with np.load('B.npz') as X:
         mtx, dist, _, _ = [X[i] for i in ('mtx','dist','rvecs','tvecs')]
     return mtx, dist
 
@@ -181,13 +183,16 @@ if __name__ == "__main__":
                         if is_qr_test:
                             center = center_bbox(bbox)
                             x, y = get_qr_pos(center)
-                            if (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or not (rospy.Time.now() - last_req > rospy.Duration(5.0)):
+                            while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or not (rospy.Time.now() - last_req > rospy.Duration(5.0)):
+                                print("waiting for feedback_1")
                                 local_pos_pub.publish(pose)
                                 rate.sleep()
                             if (x,y)<=(0.05,0.05) and (x,y)>=(-0.05,-0.05): #tolerance
+                                print("landing")
                                 land_client(land_cmd)
                                 break
                             else:
+                                print("moving to qr code")
                                 pose.pose.position.x = feedback_pos.pose.position.x + x
                                 pose.pose.position.y = feedback_pos.pose.position.y + y
                                 last_xy = (feedback_pos.pose.position.x + x,feedback_pos.pose.position.y+y)
@@ -195,6 +200,20 @@ if __name__ == "__main__":
                                 rate.sleep()
                         else:
                             print("No QR code detected")
+                            print("moving to random position")
+                            #wait until feedback_pos is updated
+                            while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or (rospy.Time.now() - last_req > rospy.Duration(5.0)):
+                                print("waiting to update feedback_pos")
+                                local_pos_pub.publish(pose)
+                                rate.sleep()
+                            pose.pose.position.x = random.uniform(-2,2)
+                            pose.pose.position.y = random.uniform(-2,2)
+                            print("x: ", pose.pose.position.x)
+                            print("y: ", pose.pose.position.y)
+                            last_xy = (pose.pose.position.x, pose.pose.position.y)
+                            last_req = rospy.Time.now()
+                            local_pos_pub.publish(pose)
+                            rate.sleep()
                     else:
                         print("No image detected")
                         rate.sleep()
