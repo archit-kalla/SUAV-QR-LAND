@@ -28,9 +28,10 @@ while(1):
     D=dist
     newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, D, (w, h), 1, (w, h))
     img = cv2.undistort(gray, K, D, None, newcameramtx)
-    cv2.imshow('img',img)
+    frame =0
+    counter = 0
+    cv2.undistort(img, mtx, dist, None, mtx)
     try:
-        cv2.undistort(img, mtx, dist, None, mtx)
         qr = pyzbar.pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
         bbox = qr[0].rect
         center = (bbox.left + int(bbox.width/2), bbox.top + int(bbox.height/2))
@@ -39,8 +40,9 @@ while(1):
         cv2.rectangle(img, (bbox.left, bbox.top), (bbox.left + bbox.width, bbox.top + bbox.height), (0, 0, 255), 2)
         cv2.imshow('img', img)
     except:
-        print("No QR code found")
+        print("No QR code found Frame:"+str(frame) +" Count: "+ str(counter))
         cv2.imshow('img', img)
+        counter+=1
         continue
     if cv2.waitKey(25) & 0xFF == ord('q'):
         break
