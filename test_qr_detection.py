@@ -7,7 +7,11 @@ import numpy as np
 
 import math
 
-cap = cv2.VideoCapture(0)
+from picamera import PiCamera
+
+camera = PiCamera()
+camera.resolution = (1280, 720)
+camera.framerate = 15
 mtx, dist = None, None
 def read_kd():
     with np.load('B.npz') as X:
@@ -15,8 +19,10 @@ def read_kd():
     return mtx, dist
 mtx,dist = read_kd()
 while(1):
-    _,input = cap.read()
-    gray = cv2.cvtColor(input, cv2.COLOR_BGR2GRAY)
+    image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
+    camera.capture(image, 'bgr')
+    new_img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
+    gray = cv2.cvtColor(new_img, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape[:2]
     K=mtx
     D=dist

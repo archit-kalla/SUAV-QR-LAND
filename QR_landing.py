@@ -90,10 +90,10 @@ def get_qr_pos(img,center_bbox):
     #assume the camera is 1 meter above the ground
     #assume the qr code is on the ground
     #assume the qr code is 40cm by 40cm
-    FOV_Y = 65
-    FOV_X = 65
+    FOV_Y = 32.4
+    FOV_X = 55
     QR_SIZE = 0.4
-    CAMERA_HEIGHT = 1
+    CAMERA_HEIGHT = 1.5
 
 
     #get the center of the image
