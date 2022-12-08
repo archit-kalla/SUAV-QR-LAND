@@ -12,6 +12,8 @@ import pyzbar
 from pyzbar.pyzbar import ZBarSymbol
 import random
 from picamera import PiCamera
+from pyquaternion import Quaternion
+
 
 
 current_state = State()
@@ -26,6 +28,9 @@ takeoff_height = 1.5
 camera = PiCamera()
 camera.resolution = (1280, 720)
 camera.framerate = 15
+q = Quaternion(axis=[0, 0, 1], angle=math.radians(90))
+
+q = q.yaw_pitch_roll[0]
 
 
 mtx, dist = None, None
@@ -106,7 +111,7 @@ def get_qr_pos(img,center_bbox):
 
     #get the angle from the center of the image to the center of the qr code
     angle_x = math.radians(FOV_X*(float(dist_x)/float(w)))
-    angle_y = math.radians(FOV_Y*float(dist_y)/float(w)))
+    angle_y = math.radians(FOV_Y*float(dist_y)/float(w))
 
     #get the distance from the camera to the qr code
     dist = CAMERA_HEIGHT/math.cos(angle_y)
@@ -176,66 +181,62 @@ if __name__ == "__main__":
     
     last_req = rospy.Time.now()
     last_xy = (init_pos[0], init_pos[1])
+    image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
 
-
+    land_bool = False
 
     while not rospy.is_shutdown():
-        if current_state.mode != "OFFBOARD" and (rospy.Time.now() - last_req > rospy.Duration(5.0)):
-            set_mode_client(offb_set_mode)
-            last_req = rospy.Time.now()
-        else:
-            if not current_state.armed and (rospy.Time.now() - last_req > rospy.Duration(5.0)):
-                arming_client(arm_cmd)
+        if land_bool:
+            print("Landing")
+            land_client.call(land_cmd)
+            #need to break once done 
+            if feedback_pos.pose.position.z < 0.1:
+                print("landed")
+                break
+            rate.sleep()
+            continue
+        #publish if not sufficent time has passed since last movement request
+        if (rospy.Time.now() - last_req) < rospy.Duration(3.0):
+            print("publishing last request")
+            pose.pose.position.x = last_xy[0]
+            pose.pose.position.y = last_xy[1]
+            local_pos_pub.publish(pose)
+            rate.sleep()
+            continue
+
+        if (abs(feedback_pos.pose.position.x - last_xy[0]) < 0.1 and abs(feedback_pos.pose.position.y - last_xy[1])) < 0.1:
+            print("Landing")
+            land_client.call(land_cmd)
+            land_bool = True
+            rate.sleep()
+            continue
+
+        if current_state.mode != "OFFBOARD":
+            print("waiting until offboard")
+            #last_req = rospy.Time.now()
+            rate.sleep()
+            continue
+        
+        if not current_state.armed:
+            #last_req = rospy.Time.now()
+            print("waiting until armed")
+            rate.sleep()
+            continue
+        camera.capture(image, 'bgr')
+        img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
+        if img:
+            #test for qr code
+            test_qr, bbox = is_qr(img)
+            if test_qr:
+                print("qr code detected")
+                #get the center of the qr code
+                center_point = center_bbox(bbox)
+                qr_pos = get_qr_pos(img,center_point)
+                #publish position
+                last_xy = qr_pos
+                pose.pose.position.x = qr_pos[0]
+                pose.pose.position.y = qr_pos[1]
+                print("x: " + str(qr_pos[0]) + " y: " + str(qr_pos[1]))
+                local_pos_pub.publish(pose)
                 last_req = rospy.Time.now()
-            else:
-                if current_state.armed:
-                    image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
-                    camera.capture(image, 'bgr')
-                    img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-                    # img = undistort(img)
-                    if img:
-                        is_qr_test, bbox = is_qr(img)
-                        if is_qr_test:
-                            center = center_bbox(bbox)
-                            x, y = get_qr_pos(img, center)
-                            while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or not (rospy.Time.now() - last_req > rospy.Duration(5.0)):
-                                print("waiting for feedback_1")
-                                local_pos_pub.publish(pose)
-                                rate.sleep()
-                            if (x,y)<=(0.05,0.05) and (x,y)>=(-0.05,-0.05): #tolerance
-                                print("landing")
-                                land_client(land_cmd)
-                                break
-                            else:
-                                print("moving to qr code")
-                                pose.pose.position.x = feedback_pos.pose.position.x + x
-                                pose.pose.position.y = feedback_pos.pose.position.y + y
-                                print("x: ", pose.pose.position.x)
-                                print("y: ", pose.pose.position.y)
-                                last_xy = (feedback_pos.pose.position.x + x,feedback_pos.pose.position.y+y)
-                                local_pos_pub.publish(pose)
-                                rate.sleep()
-                        else:
-                            print("No QR code detected")
-                            print("moving to random position")
-                            #wait until feedback_pos is updated
-                            while (feedback_pos.pose.position.x!= last_xy[0] and feedback_pos.pose.position.y!= last_xy[1]) or (rospy.Time.now() - last_req > rospy.Duration(10.0)):
-                                print("waiting to update feedback_pos")
-                                local_pos_pub.publish(pose)
-                                rate.sleep()
-                            # pose.pose.position.x = random.uniform(-1,1)
-                            # pose.pose.position.y = random.uniform(-1,1)
-                            print("x: ", pose.pose.position.x)
-                            print("y: ", pose.pose.position.y)
-                            last_xy = (pose.pose.position.x, pose.pose.position.y)
-                            last_req = rospy.Time.now()
-                            local_pos_pub.publish(pose)
-                            rate.sleep()
-                    else:
-                        print("No image detected")
-                        rate.sleep()
-                else:
-                    print("arming")
-                    arming_client(arm_cmd)
-                    last_req = rospy.Time.now()
-                    rate.sleep()
+        rate.sleep()
