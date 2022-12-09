@@ -1,4 +1,4 @@
-#python 2.7
+#!/usr/bin/python
 
 import rospy
 import numpy as np
@@ -12,7 +12,8 @@ import pyzbar
 from pyzbar.pyzbar import ZBarSymbol
 import random
 from picamera import PiCamera
-from pyquaternion import Quaternion
+
+#from pyquaternion import Quaternion
 
 
 
@@ -28,9 +29,9 @@ takeoff_height = 1.5
 camera = PiCamera()
 camera.resolution = (1280, 720)
 camera.framerate = 15
-q = Quaternion(axis=[0, 0, 1], angle=math.radians(90))
+#q = Quaternion(axis=[0, 0, 1], angle=math.radians(90))
 
-q = q.yaw_pitch_roll[0]
+#q = q.yaw_pitch_roll[0]
 
 
 mtx, dist = None, None
@@ -152,24 +153,26 @@ if __name__ == "__main__":
     pose.pose.position.x = init_pos[0]		
     pose.pose.position.y = init_pos[1]	
     pose.pose.position.z = init_pos[2]
+    #make pose.pose.orientation forward left up 
+    pose.pose.orientation.x = 0
+    pose.pose.orientation.y = 0
+    pose.pose.orientation.z = takeoff_height
+    pose.pose.orientation.w = 1
 
 
     # Send a few setpoints before starting
-    for i in range(100):   
-        if(rospy.is_shutdown()):
-            break
+    # for i in range(100):   
+    #     if(rospy.is_shutdown()):
+    #         break
 
-        local_pos_pub.publish(pose)
-        rate.sleep()
-    
-    #takeoff
-    pose.pose.position.z = takeoff_height
-    for i in range(100):
-        if(rospy.is_shutdown()):
-            break
+    #     local_pos_pub.publish(pose)
+    #     rate.sleep()
+    # for i in range(100):
+    #     if(rospy.is_shutdown()):
+    #         break
 
-        local_pos_pub.publish(pose)
-        rate.sleep()
+    #     local_pos_pub.publish(pose)
+    #     rate.sleep()
 
     offb_set_mode = SetModeRequest()
     offb_set_mode.custom_mode = 'OFFBOARD'
@@ -184,8 +187,15 @@ if __name__ == "__main__":
     image = np.empty((camera.resolution[1] * camera.resolution[0] * 3,), dtype=np.uint8)
 
     land_bool = False
+    test_qr = False
+
+    while current_state.mode!= "OFFBOARD":
+        print("waitin for offboard")
+        local_pos_pub.publish(pose)
+        rate.sleep()
 
     while not rospy.is_shutdown():
+        local_pos_pub.publish(pose)
         if land_bool:
             print("Landing")
             land_client.call(land_cmd)
@@ -203,13 +213,13 @@ if __name__ == "__main__":
             local_pos_pub.publish(pose)
             rate.sleep()
             continue
-
-        if (abs(feedback_pos.pose.position.x - last_xy[0]) < 0.1 and abs(feedback_pos.pose.position.y - last_xy[1])) < 0.1:
-            print("Landing")
-            land_client.call(land_cmd)
-            land_bool = True
-            rate.sleep()
-            continue
+        if test_qr:
+            if (abs(feedback_pos.pose.position.x - last_xy[0]) < 0.1 and abs(feedback_pos.pose.position.y - last_xy[1])) < 0.1:
+                print("Landing")
+                land_client.call(land_cmd)
+                land_bool = True
+                rate.sleep()
+                continue
 
         if current_state.mode != "OFFBOARD":
             print("waiting until offboard")
@@ -220,11 +230,12 @@ if __name__ == "__main__":
         if not current_state.armed:
             #last_req = rospy.Time.now()
             print("waiting until armed")
+            arming_client.call(arm_cmd)
             rate.sleep()
             continue
         camera.capture(image, 'bgr')
         img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-        if img:
+        if img.any()!=None:
             #test for qr code
             test_qr, bbox = is_qr(img)
             if test_qr:
