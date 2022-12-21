@@ -123,6 +123,11 @@ def get_qr_pos(img,center_bbox):
 
     #return the real world coordinates of the center of the qr code
     return (x,y)
+#calculate the distance between 2 points
+def dist(x1,y1,x2,y2):
+    dist = math.sqrt((x1-x2)**2 + (y1-y2)**2)
+
+
     
 if __name__ == "__main__":
     rospy.init_node("offb_landing_py")
@@ -141,6 +146,7 @@ if __name__ == "__main__":
     rospy.wait_for_service("/mavros/cmd/land")
     land_client = rospy.ServiceProxy("mavros/cmd/land", CommandTOL)
 
+
     # Setpoint publishing MUST be faster than 2Hz
     rate = rospy.Rate(20)
 
@@ -156,8 +162,8 @@ if __name__ == "__main__":
     #make pose.pose.orientation forward left up 
     pose.pose.orientation.x = 0
     pose.pose.orientation.y = 0
-    pose.pose.orientation.z = takeoff_height
-    pose.pose.orientation.w = 1
+    pose.pose.orientation.z = 0.707
+    pose.pose.orientation.w = 0.707
 
 
     # Send a few setpoints before starting
@@ -227,12 +233,12 @@ if __name__ == "__main__":
             rate.sleep()
             continue
         
-        if not current_state.armed:
-            #last_req = rospy.Time.now()
-            print("waiting until armed")
-            arming_client.call(arm_cmd)
-            rate.sleep()
-            continue
+        # if not current_state.armed:
+        #     #last_req = rospy.Time.now()
+        #     print("waiting until armed")
+        #     arming_client.call(arm_cmd)
+        #     rate.sleep()
+        #     continue
         camera.capture(image, 'bgr')
         img = image.reshape((camera.resolution[1], camera.resolution[0], 3))
         if img.any()!=None:
@@ -250,4 +256,13 @@ if __name__ == "__main__":
                 print("x: " + str(qr_pos[0]) + " y: " + str(qr_pos[1]))
                 local_pos_pub.publish(pose)
                 last_req = rospy.Time.now()
+            else:
+                print("no qr code detected")
+                #publish last random position from x =[-.5,.5] y =[-1,.5]
+                last_xy = (random.uniform(-.5,.5), random.uniform(-1,.5))
+                pose.pose.position.x = last_xy[0]
+                pose.pose.position.y = last_xy[1]
+                local_pos_pub.publish(pose)
+                last_req = rospy.Time.now()
+
         rate.sleep()
