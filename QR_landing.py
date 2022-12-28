@@ -92,10 +92,6 @@ def center_bbox(bbox):
 
 def get_qr_pos(img,center_bbox):
     #get the real world coordinates of the center of the qr code 
-    #assume fov of camera is 60 degrees
-    #assume the camera is 1 meter above the ground
-    #assume the qr code is on the ground
-    #assume the qr code is 40cm by 40cm
     FOV_Y = 32.4
     FOV_X = 55
     QR_SIZE = 0.4
