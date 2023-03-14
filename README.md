@@ -10,6 +10,8 @@ To begin our project, we knew that we would need to have some form of understand
 - Considerably lightweight, weighing less than 100 grams
 - Power-efficient, using less than 10 watts of power
 - Be able to provide suitable depth information for UAV landing 
+- Use python2.7
+
 
 ## Overview of code
 
